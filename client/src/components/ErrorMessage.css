@@ -1,0 +1,26 @@
+.error-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 80vh;
+}
+
+.error-card {
+    text-align: center;
+    padding: 40px;
+    border-radius: 12px;
+    max-width: 500px;
+
+    background: #fff5f5;
+    border: 1px solid #ffbaba;
+}
+
+.error-card h2 {
+    color: #d32f2f;
+}
+
+.error-card button {
+    margin-top: 15px;
+    padding: 10px 20px;
+    cursor: pointer;
+}

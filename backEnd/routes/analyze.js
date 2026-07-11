@@ -2,6 +2,7 @@
 const express = require("express");
 const multer = require("multer");
 const analyzeController = require("../controllers/analyzeController");
+const protect = require("../middleware/authMiddleware");
 
 const router = express.Router();
 
@@ -15,30 +16,57 @@ const upload = multer({
     }
 });
 
-// POST /analyze
-router.post("/", (req, res, next) => {
-    upload.fields([
-        { name: "resume", maxCount: 1 },
-        { name: "jdPdf", maxCount: 1 }
-    ])(req, res, (err) => {
+// 🚀 POST /analyze (PROTECTED ROUTE)
+router.post(
+    "/",
+    protect, // 🔐 authentication middleware
+    (req, res, next) => {
+        upload.fields([
+            { name: "resume", maxCount: 1 },
+            { name: "jdPdf", maxCount: 1 }
+        ])(req, res, (err) => {
 
-        // Multer error
-        if (err instanceof multer.MulterError) {
-            return res.status(400).json({
-                error: `Upload error: ${err.message}`
-            });
-        }
+            // ❌ Multer error
+            if (err instanceof multer.MulterError) {
+                return res.status(400).json({
+                    error: `Upload error: ${err.message}`
+                });
+            }
 
-        // Unknown error
-        if (err) {
-            return res.status(500).json({
-                error: "File upload failed"
-            });
-        }
+            // ❌ Unknown error
+            if (err) {
+                return res.status(500).json({
+                    error: "File upload failed"
+                });
+            }
 
-        // Proceed to controller
-        next();
-    });
-}, analyzeController);
+            next();
+        });
+    }, analyzeController);
+
+// router.post("/", (req, res, next) => {
+//     upload.fields([
+//         { name: "resume", maxCount: 1 },
+//         { name: "jdPdf", maxCount: 1 }
+//     ])(req, res, (err) => {
+
+//         // Multer error
+//         if (err instanceof multer.MulterError) {
+//             return res.status(400).json({
+//                 error: `Upload error: ${err.message}`
+//             });
+//         }
+
+//         // Unknown error
+//         if (err) {
+//             return res.status(500).json({
+//                 error: "File upload failed"
+//             });
+//         }
+
+//         // Proceed to controller
+//         next();
+//     });
+// }, analyzeController);
 
 module.exports = router;

@@ -12,6 +12,33 @@
 const express = require("express");
 const router = express.Router();
 const Analysis = require("../models/Analysis");
+const protect = require("../middleware/authMiddleware");
+
+// GET /analysis - Get all analyses for the logged-in user
+router.get("/analysis", protect, async (req, res) => {
+    try {
+        const analyses = await Analysis.find({ user: req.user._id }).sort({ createdAt: -1 });
+        res.json(analyses);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// GET /analysis/:id - Get a single analysis by ID
+router.get("/analysis/:id", protect, async (req, res) => {
+    try {
+        const analysis = await Analysis.findById(req.params.id);
+        if (!analysis) {
+            return res.status(404).json({ error: "Analysis not found" });
+        }
+        if (analysis.user.toString() !== req.user._id.toString()) {
+            return res.status(403).json({ error: "Unauthorized access to this analysis" });
+        }
+        res.json(analysis);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
 
 // ✅ POST route
 router.post("/analysis", async (req, res) => {
