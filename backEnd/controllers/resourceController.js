@@ -1,20 +1,8 @@
-const callGroq = require("../utils/groqClient");
+const fs = require("fs");
+const path = require("path");
 const asyncHandler = require("../middleware/asyncHandler");
 const ApiError = require("../utils/ApiError");
 const Analysis = require("../models/Analysis");
-
-function extractJSON(text) {
-  try {
-    const cleaned = text
-      .replace(/```json/g, "")
-      .replace(/```/g, "")
-      .trim();
-
-    return JSON.parse(cleaned);
-  } catch (err) {
-    return null;
-  }
-}
 
 const resourceController = asyncHandler(async (req, res) => {
   const { analysisId } = req.body;
@@ -49,54 +37,54 @@ const resourceController = asyncHandler(async (req, res) => {
     return res.json(emptyResources);
   }
 
-  const prompt = `
-You are a software engineering mentor.
-
-From the following list of skills, identify only the primary, core, or main skills (ignore minor, overly specific, or redundant ones) and generate high-quality learning resources for them:
-
-${missingSkills.join(", ")}
-
-Return ONLY JSON:
-
-{
-  "resources":[
-    {
-      "skill":"",
-      "youtube":[
-        {
-          "title":"",
-          "url":""
-        }
-      ],
-      "articles":[
-        {
-          "title":"",
-          "url":""
-        }
-      ]
-    }
-  ]
-
-  provide official documentation in place of any article or 
-}
-`;
-
-  console.log("📤 Calling Groq for Learning Resources...");
-  const output = await callGroq(prompt);
-  const result = extractJSON(output);
-
-  if (!result) {
-    throw new ApiError(
-      500,
-      "AI returned an Invalid response"
-    );
+  // 4️⃣ Read curated resources database from data/resources.json
+  const resourcesPath = path.join(__dirname, "../data/resources.json");
+  let courses = [];
+  try {
+    const fileContent = fs.readFileSync(resourcesPath, "utf-8");
+    const parsedData = JSON.parse(fileContent);
+    courses = parsedData.courses || [];
+  } catch (error) {
+    console.error("❌ Error reading or parsing resources.json:", error);
+    throw new ApiError(500, "Failed to load curated resources database.");
   }
 
-  // 4️⃣ Save to DB
+  // 5️⃣ Search and match missing skills in resources.json
+  const matchedResources = [];
+
+  for (const skill of missingSkills) {
+    // Try exact match first (case-insensitive)
+    let matchedCourse = courses.find(course =>
+      course.skill_names.some(name => name.toLowerCase() === skill.toLowerCase())
+    );
+
+    // Try substring matching if exact match not found
+    if (!matchedCourse) {
+      matchedCourse = courses.find(course =>
+        course.skill_names.some(name =>
+          skill.toLowerCase().includes(name.toLowerCase()) ||
+          name.toLowerCase().includes(skill.toLowerCase())
+        )
+      );
+    }
+
+    if (matchedCourse) {
+      matchedResources.push({
+        skill: skill,
+        levels: matchedCourse.levels
+      });
+    } else {
+      console.log(`ℹ️ No curated resources found for missing skill: "${skill}"`);
+    }
+  }
+
+  const result = { resources: matchedResources };
+
+  // 6️⃣ Save to DB
   analysis.resources = result;
   await analysis.save();
 
-  console.log("✅ Saved resources to DB");
+  console.log("✅ Cached matched resources in DB");
   res.json(result);
 });
 
