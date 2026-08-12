@@ -287,3 +287,30 @@ setTechnicalQuestions: (data) =>
     };
   })
 ```
+
+### 6. Analysis Deletion Flow
+When a user decides to delete an analysis from their dashboard, the program utilizes the following execution sequence to remove the record securely:
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor User
+    participant Client as Dashboard.jsx (btn-delete)
+    participant Server as router.delete("/analysis/:id")
+    participant DB as MongoDB (Analysis)
+    
+    User->>Client: Clicks trash icon (btn-delete) on card
+    Note over Client: e.stopPropagation() prevents card selection redirection
+    Client->>User: Prompts window.confirm() dialogue
+    User->>Client: Confirms "OK"
+    Client->>Server: DELETE /api/analysis/:id
+    Server->>DB: Find analysis by ID
+    DB-->>Server: Returns document
+    Note over Server: Verifies that analysis.user === req.user._id
+    Server->>DB: Analysis.findByIdAndDelete(id)
+    DB-->>Server: Deletion confirmed
+    Server-->>Client: Returns JSON { success: true }
+    Client->>Client: Removes analysis from state list (auto UI re-render)
+```
+*   **Event Delegation**: The click on the delete button triggers `e.stopPropagation()` which prevents the event from bubble-triggering `handleCardClick(analysis)`. This stops the app from navigating to the analysis result details page during the deletion process.
+*   **Security Guard**: The backend `DELETE` handler validates user ownership against the JWT cookie before committing the mongoose `findByIdAndDelete` action.

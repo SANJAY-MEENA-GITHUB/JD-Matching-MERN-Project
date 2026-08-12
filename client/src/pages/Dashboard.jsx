@@ -34,6 +34,19 @@ const Dashboard = () => {
     fetchHistory();
   }, []);
 
+  const handleDelete = async (e, id) => {
+    e.stopPropagation(); // Prevent navigating to analysis-result
+    if (!window.confirm("Are you sure you want to delete this analysis?")) return;
+
+    try {
+      await api.delete(`/analysis/${id}`);
+      setAnalyses((prev) => prev.filter((item) => item._id !== id));
+    } catch (err) {
+      console.error(err);
+      alert("Failed to delete analysis: " + getErrorMessage(err));
+    }
+  };
+
   const handleCardClick = (analysis) => {
     // Save to global store (which will automatically populate sub-sections)
     setResult(analysis);
@@ -142,8 +155,22 @@ const Dashboard = () => {
                       <h3 className="job-role">{analysis.jobRole || "Software Engineer"}</h3>
                       <p className="card-date">{formatDate(analysis.createdAt || analysis.updatedAt)}</p>
                     </div>
-                    <div className={`score-badge ${scoreClass}`}>
-                      {score}% Match
+                    <div style={{ display: "flex", gap: "0.6rem", alignItems: "center" }}>
+                      <div className={`score-badge ${scoreClass}`}>
+                        {score}% Match
+                      </div>
+                      <button
+                        className="btn-delete"
+                        onClick={(e) => handleDelete(e, analysis._id)}
+                        title="Delete Analysis"
+                      >
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: "16px", height: "16px" }}>
+                          <polyline points="3 6 5 6 21 6"></polyline>
+                          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                          <line x1="10" y1="11" x2="10" y2="17"></line>
+                          <line x1="14" y1="11" x2="14" y2="17"></line>
+                        </svg>
+                      </button>
                     </div>
                   </div>
 

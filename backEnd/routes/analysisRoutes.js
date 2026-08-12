@@ -40,6 +40,23 @@ router.get("/analysis/:id", protect, async (req, res) => {
     }
 });
 
+// DELETE /analysis/:id - Delete an analysis by ID
+router.delete("/analysis/:id", protect, async (req, res) => {
+    try {
+        const analysis = await Analysis.findById(req.params.id);
+        if (!analysis) {
+            return res.status(404).json({ error: "Analysis not found" });
+        }
+        if (analysis.user.toString() !== req.user._id.toString()) {
+            return res.status(403).json({ error: "Unauthorized access to this analysis" });
+        }
+        await Analysis.findByIdAndDelete(req.params.id);
+        res.json({ success: true, message: "Analysis deleted successfully" });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // ✅ POST route
 router.post("/analysis", async (req, res) => {
     try {

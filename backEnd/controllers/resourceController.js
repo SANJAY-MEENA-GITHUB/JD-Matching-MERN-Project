@@ -84,6 +84,23 @@ const resourceController = asyncHandler(async (req, res) => {
   analysis.resources = result;
   await analysis.save();
 
+  //---------------------------
+  //debug
+  // analysis.resources = result;
+
+  // console.log("Before Save:");
+  // console.log(analysis.resources);
+
+  // await analysis.save();
+
+  // console.log("Saved Successfully");
+
+  // const updated = await Analysis.findById(analysisId);
+
+  // console.log("Read Again From MongoDB:");
+  // console.log(updated.resources);
+  //------------------------------
+
   console.log("✅ Cached matched resources in DB");
   res.json(result);
 });
